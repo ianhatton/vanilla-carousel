@@ -1,3 +1,4 @@
+/* eslint-disable max-len, require-jsdoc */
 const _ = require('lodash');
 const CarouselClass = require('../src/vanilla-carousel');
 
@@ -37,9 +38,7 @@ function createCarouselImageContainers(item, i){
   carouselImageContainer.setAttribute('data-tablet', dataURLTablet);
   carouselImageContainer.setAttribute('data-desktop', dataURLDesktop);
 
-  /* eslint-disable max-len */
   carouselImageContainer.style.backgroundImage = "url('" + dataURLDesktop + "')";
-  /* eslint-enable */
 
   createCarouselOverlays(carouselImageContainer, i);
 
@@ -87,7 +86,7 @@ function createCarouselOverlays(carouselImageContainer, i){
   carouselImageContainer.appendChild(carouselOverlay);
 }
 
-describe('carousel', ()=>{
+describe('carousel', function(){
   let c, carousel, viewport;
 
   beforeEach(()=>{
@@ -99,27 +98,13 @@ describe('carousel', ()=>{
       , autoPlay: false
       , itemClass: 'carousel-item'
     }, false);
+
+    // For testing
+    this.items = carousel.config.element.querySelectorAll('.' + carousel.config.itemClass);
   });
 
   it('should exist', ()=>{
     expect(carousel).toBeDefined();
-  });
-
-  describe('_render function', ()=>{
-    beforeEach(()=>{
-      spyOn(carousel, '_getItems');
-      spyOn(carousel, '_setDefaultSelected');
-
-      carousel._render();
-    });
-
-    it('should call the _getItems function', ()=>{
-      expect(carousel._getItems).toHaveBeenCalled();
-    });
-
-    it('should call the _setDefaultSelected function', ()=>{
-      expect(carousel._setDefaultSelected).toHaveBeenCalled();
-    });
   });
 
   describe('_init function', ()=>{
@@ -133,7 +118,7 @@ describe('carousel', ()=>{
       expect(carousel.animating).toBeFalsy();
     });
 
-    it('should set this.eventManager to the _manageListeners function', ()=>{
+    it('should set this.eventManager to be a call to the _manageListeners function', ()=>{
       expect(carousel.eventManager.addListener).toBeDefined();
       expect(carousel.eventManager.removeAll).toBeDefined();
     });
@@ -146,7 +131,7 @@ describe('carousel', ()=>{
       expect(carousel.itemActive).toEqual(0);
     });
 
-    it('should set this.items to be an empty array', ()=>{
+    it('should set this.items be an empty array', ()=>{
       expect(carousel.items.length).toEqual(0);
     });
 
@@ -176,4 +161,83 @@ describe('carousel', ()=>{
       expect(viewport.trackSize).toHaveBeenCalled();
     });
   });
+
+  describe('_render function', ()=>{
+    beforeEach(()=>{
+      spyOn(carousel, '_getItems');
+      spyOn(carousel, '_setDefaultSelected');
+
+      carousel._render();
+    });
+
+    it('should call the _getItems function', ()=>{
+      expect(carousel._getItems).toHaveBeenCalled();
+    });
+
+    it('should call the _setDefaultSelected function', ()=>{
+      expect(carousel._setDefaultSelected).toHaveBeenCalled();
+    });
+  });
+
+  // describe('_addDotClickListeners function', ()=>{
+  //   How do I test this?
+  // });
+
+  // describe('_addFocusListeners function', ()=>{
+  //   How do I test this?
+  // });
+
+  // describe('_addNextListener function', ()=>{
+  //   How do I test this?
+  // });
+
+  // describe('_addPreviousListener function', ()=>{
+  //   How do I test this?
+  // });
+
+  describe('_animateItemFinish function', ()=>{
+    let eventSpy, item;
+
+    beforeEach(()=>{
+      carousel.animating = true;
+      carousel.items = this.items;
+      eventSpy = jasmine.createSpyObj('e', ['']);
+      item = carousel.items[0];
+      item.className += ' animating';
+
+      carousel._animateItemFinish(item, eventSpy);
+    });
+
+    it('should set this.animating to false', ()=>{
+      expect(carousel.animating).toBeFalsy();
+    });
+
+    it('should remove the "animating" class from the item', ()=>{
+      expect(item.className).not.toContain('animating');
+    });
+  });
+
+  describe('_animateItemStart function', ()=>{
+    let item;
+
+    beforeEach((done)=>{
+      carousel.animating = false;
+      carousel.eventManager = carousel._manageListeners();
+      carousel.items = this.items;
+      item = carousel.items[0];
+
+      // spyOn(carousel.eventManager, 'addListener');
+
+      carousel._animateItemStart(item, -1000, 0);
+      done();
+    });
+
+    it('should set this.animating to true', (done)=>{
+      setTimeout(function() {
+        expect(carousel.animating).toBeTruthy();
+        done();
+      }, 100);
+    });
+  });
 });
+/* eslint-enable */

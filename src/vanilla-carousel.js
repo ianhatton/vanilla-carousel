@@ -68,12 +68,8 @@ class CarouselClass{
                                         , false);
   }
 
-  _animateItemFinish(e){
-    let item = e.target;
-
-    _.defer(()=>{
-      this.animating = false;
-    });
+  _animateItemFinish(item, e){
+    this.animating = false;
 
     item.className = item.className.replace(/(?:^|\s)animating(?!\S)/g, '');
   }
@@ -89,7 +85,7 @@ class CarouselClass{
 
     this.eventManager.addListener(item
                                  , 'transitionend'
-                                 , this._animateItemFinish.bind(this));
+                                 , this._animateItemFinish.bind(this, item));
   }
 
   _checkDataURLs(){
