@@ -23,7 +23,6 @@ class CarouselClass{
   _init(){
     this.animating = false;
     this.eventManager = this._manageListeners();
-    this.hasDataURLs = false;
     this.itemActive = 0;
     this.items = [];
     this._render();
@@ -98,10 +97,12 @@ class CarouselClass{
       imageDesktop = imageContainer.getAttribute('data-desktop');
 
       /* eslint-disable max-len */
-      if ((!_.isNull(imageMobile) && !_.includes(imageMobile, 'null')) && (!_.isNull(imageTablet) && !_.includes(imageTablet, 'null')) && (!_.isNull(imageDesktop) && !_.includes(imageDesktop, 'null'))){
+      if ((!_.isEmpty(imageMobile)) && (!_.isEmpty(imageTablet)) && (!_.isEmpty(imageDesktop))){
       /* eslint-enable */
-        this.hasDataURLs = true;
-        this._setBackgroundImages(this.device);
+        item.setAttribute('data-urls', 'true');
+        this._setBackgroundImages(imageContainer, this.device);
+      } else {
+        item.setAttribute('data-urls', 'false');
       }
     }.bind(this));
   }
@@ -323,14 +324,10 @@ class CarouselClass{
     }
   }
 
-  _setBackgroundImages(device){
-    _.forEach(this.items, function(item){
-      let imageContainer = this._skipTextNodes(item, 'firstChild');
+  _setBackgroundImages(imageContainer, device){
+    let url = imageContainer.getAttribute('data-' + device);
 
-      let url = imageContainer.getAttribute('data-' + device);
-
-      imageContainer.style.backgroundImage = 'url(' + url + ')';
-    }.bind(this));
+    imageContainer.style.backgroundImage = 'url(' + url + ')';
   }
 
   _setDefaultSelected(){
@@ -430,11 +427,14 @@ class CarouselClass{
   }
 
   _trackSize(device, size){
+    let item = this.items[this.itemActive];
+
     if (this.device !== device){
       this.device = device;
 
-      if (this.hasDataURLs){
-        this._setBackgroundImages(this.device);
+      if (item.getAttribute('data-urls') === 'true'){
+        let imageContainer = this._skipTextNodes(item, 'firstChild');
+        this._setBackgroundImages(imageContainer, this.device);
       }
     }
 

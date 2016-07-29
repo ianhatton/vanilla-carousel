@@ -27,8 +27,8 @@ function createCarouselImageContainers(item, i){
   dataURLDesktop = 'desktop.jpg';
 
   if (i % 2){
-    dataURLMobile = 'null';
-    dataURLTablet = 'null';
+    dataURLMobile = '';
+    dataURLTablet = '';
   } else {
     dataURLMobile = 'mobile.jpg';
     dataURLTablet = 'tablet.jpg';
@@ -121,10 +121,6 @@ describe('carousel', function(){
     it('should set this.eventManager to be a call to the _manageListeners function', ()=>{
       expect(carousel.eventManager.addListener).toBeDefined();
       expect(carousel.eventManager.removeAll).toBeDefined();
-    });
-
-    it('should set this.hasDataURLs to false', ()=>{
-      expect(carousel.hasDataURLs).toBeFalsy();
     });
 
     it('should set this.itemActive to 0', ()=>{
@@ -226,18 +222,81 @@ describe('carousel', function(){
       carousel.items = this.items;
       item = carousel.items[0];
 
-      // spyOn(carousel.eventManager, 'addListener');
+      spyOn(carousel.eventManager, 'addListener');
 
       carousel._animateItemStart(item, -1000, 0);
       done();
     });
 
     it('should set this.animating to true', (done)=>{
-      setTimeout(function() {
+      setTimeout(function(){
         expect(carousel.animating).toBeTruthy();
         done();
       }, 100);
     });
+
+    it('should set the left property of the carousel item to value of the end parameter', (done)=>{
+      setTimeout(function(){
+        expect(item.style.left).toEqual('0px');
+        done();
+      }, 100);
+    });
+
+    it('should add the "animating" class to the carousel item', (done)=>{
+      setTimeout(function(){
+        expect(item.className).toContain('animating');
+        done();
+      }, 100);
+    });
+
+    it('should call the eventManager.addListener function', ()=>{
+      expect(carousel.eventManager.addListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('_checkDataURLs function', ()=>{
+    let imageContainer, item;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+      item = carousel.items[0];
+      imageContainer = item.children[0];
+
+      spyOn(carousel, '_skipTextNodes').and.returnValue(imageContainer);
+      spyOn(carousel, '_setBackgroundImages');
+    });
+
+    describe('when there is only a desktop image', ()=>{
+      beforeEach(()=>{
+        carousel._checkDataURLs();
+      });
+
+      it("should set the item's 'data-urls' attribute to be 'false'", ()=>{
+        expect(item.getAttribute('data-urls')).toEqual('false');
+      });
+    });
+
+    describe('when there are mobile, tablet and desktop images', ()=>{
+      beforeEach(()=>{
+        carousel.device = 'massive swanky monitor';
+        imageContainer.setAttribute('data-mobile', 'mobile.jpg');
+        imageContainer.setAttribute('data-tablet', 'tablet.jpg');
+
+        carousel._checkDataURLs();
+      });
+
+      it("should set the item's 'data-urls' attribute to be 'true'", ()=>{
+        expect(item.getAttribute('data-urls')).toEqual('true');
+      });
+
+      it('should call the _setBackgroundImages function with imageContainer and this.device as parameters', ()=>{
+        expect(carousel._setBackgroundImages).toHaveBeenCalledWith(imageContainer, 'massive swanky monitor');
+      });
+    });
+  });
+
+  describe('_createArrowNav function', ()=>{
+
   });
 });
 /* eslint-enable */
