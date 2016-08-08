@@ -86,6 +86,21 @@ function createCarouselOverlays(carouselImageContainer, i){
   carouselImageContainer.appendChild(carouselOverlay);
 }
 
+function createDotsNavContainer(){
+  let dotsContainer;
+  let div = document.createElement('div');
+  let ul = document.createElement('ul');
+  dotsContainer = document.createElement('div');
+
+  div.className = 'carousel-dots';
+  dotsContainer.id = 'carousel-dots-container';
+
+  div.appendChild(ul);
+  dotsContainer.appendChild(div);
+ 
+  return dotsContainer;
+}
+
 describe('carousel', function(){
   let c, carousel, viewport;
 
@@ -100,6 +115,7 @@ describe('carousel', function(){
     }, false);
 
     // For testing
+    this.dotsContainer = createDotsNavContainer();
     this.items = carousel.config.element.querySelectorAll('.' + carousel.config.itemClass);
   });
 
@@ -296,7 +312,259 @@ describe('carousel', function(){
   });
 
   describe('_createArrowNav function', ()=>{
+    let li, ul, svg;
 
+    beforeEach(()=>{
+      li = document.createElement('li');
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ul = document.createElement('ul');
+
+      ul.className = 'carousel-arrows-container';
+
+      ul.appendChild(li);
+
+      spyOn(carousel, '_createArrowNavSvg').and.returnValue(svg);
+    });
+
+    describe('when the direction parameter is "previous"', ()=>{
+      beforeEach(()=>{
+        spyOn(carousel, '_addPreviousListener');
+
+        carousel._createArrowNav('previous', li);
+      });
+
+      it('should call the _createArrowNavSvg function with a parameter of "previous"', ()=>{
+        expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('previous');
+      });
+
+      it('should create this.previousButton', ()=>{
+        expect(carousel.previousButton.id).toEqual('carousel-previous');
+      });
+
+      it('should call the _addPreviousListener function', ()=>{
+        expect(carousel._addPreviousListener).toHaveBeenCalled();
+      });
+    });
+
+    describe('when the direction parameter is "next"', ()=>{
+      beforeEach(()=>{
+        spyOn(carousel, '_addNextListener');
+
+        carousel._createArrowNav('next', li);
+      });
+
+      it('should call the _createArrowNavSvg function with a parameter of "next"', ()=>{
+        expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('next');
+      });
+
+      it('should create this.nextButton', ()=>{
+        expect(carousel.nextButton.id).toEqual('carousel-next');
+      });
+
+      it('should call the _addNextListener function', ()=>{
+        expect(carousel._addNextListener).toHaveBeenCalled();
+      });
+    });
+  });
+
+  // describe('_createArrowNavSvg function', ()=>{
+  //  I don't see the point in testing this 
+  // });
+
+  describe('_createArrowNavContainer', ()=>{
+    beforeEach(()=>{
+      spyOn(carousel, '_createArrowNav');
+
+      carousel._createArrowNavContainer();
+    });
+
+    it('should call the _createArrowNav function', ()=>{
+      expect(carousel._createArrowNav).toHaveBeenCalled();
+    });
+  });
+
+  describe('_createDotsNav function', ()=>{
+    let ul;
+
+    beforeEach(()=>{
+      carousel.dotsContainer = this.dotsContainer;
+      carousel.items = this.items;
+      ul = this.dotsContainer.getElementsByTagName('ul')[0];
+
+      spyOn(carousel, '_getDots');
+
+      carousel._createDotsNav();
+    });
+
+    it('should create a dot navigation item for each of this.items', ()=>{
+      expect(ul.querySelectorAll('li').length).toEqual(2);
+    });
+
+    it('should call the _getDots function', ()=>{
+      expect(carousel._getDots).toHaveBeenCalled();
+    });
+  });
+
+  describe('_createDotsNavContainer', ()=>{
+    beforeEach(()=>{
+      spyOn(carousel, '_createDotsNav');
+
+      carousel._createDotsNavContainer();
+    });
+
+    it('should create this.dotsContainer', ()=>{
+      expect(carousel.dotsContainer.id).toEqual('carousel-dots-container');
+    })
+
+    it('should call the _createDotsNav function', ()=>{
+      expect(carousel._createDotsNav).toHaveBeenCalled();
+    });
+  });
+
+  describe('_dotClick function', ()=>{
+    let clickSpy;
+
+    beforeEach(()=>{
+      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+
+      clickSpy = jasmine.createSpyObj('e', ['preventDefault', 'target']);
+
+      spyOn(carousel, '_setDotClass');
+      spyOn(carousel, '_setSelected');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel._dotClick(clickSpy);
+      });
+
+      it('should call e.preventDefault', ()=>{
+        expect(clickSpy.preventDefault).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.animating is false', ()=>{
+      beforeEach(()=>{
+        carousel.animating = false;
+        carousel.itemActive = 0;
+        carousel.itemOut = 1;
+
+        carousel._dotClick(clickSpy);
+      });
+
+      it('should set this.itemOut to be the value of this.itemActive', ()=>{
+        expect(carousel.itemOut).toEqual(0);
+      });
+
+      it('should set this.active to be the value of index', ()=>{
+        expect(carousel.itemActive).toEqual(-1);
+      });
+
+      it('should call the _setDotClass function', ()=>{
+        expect(carousel._setDotClass).toHaveBeenCalled();
+      });
+
+      it('should call the _setSelected function', ()=>{
+        expect(carousel._setSelected).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.animating is true', ()=>{
+      beforeEach(()=>{
+        carousel.animating = true;
+        carousel.itemActive = 0;
+        carousel.itemOut = 1;
+
+        carousel._dotClick(clickSpy);
+      });
+
+      it('should not set this.itemOut to be the value of this.itemActive', ()=>{
+        expect(carousel.itemOut).not.toEqual();
+      });
+
+      it('should not set this.active to be the value of index', ()=>{
+        expect(carousel.itemActive).not.toEqual(-1);
+      });
+
+      it('should not call the _setDotClass function', ()=>{
+        expect(carousel._setDotClass).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _setSelected function', ()=>{
+        expect(carousel._setSelected).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('_getDots function', ()=>{
+    beforeEach(()=>{
+      carousel.dotsContainer = this.dotsContainer;
+
+      spyOn(carousel, '_addDotClickListeners');
+      spyOn(carousel, '_setDotClass');
+
+      carousel._getDots();
+    });
+
+    it('should call the _addDotClickListeners function', ()=>{
+      expect(carousel._addDotClickListeners).toHaveBeenCalled();
+    });
+
+    it('should call the _setDotClass function', ()=>{
+      expect(carousel._setDotClass).toHaveBeenCalled();
+    });
+  });
+
+  describe('_getItems function', ()=>{
+    beforeEach(()=>{
+      spyOn(carousel, '_checkDataURLs');
+      spyOn(carousel, '_createArrowNavContainer');
+        spyOn(carousel, '_createDotsNavContainer');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel._getItems();
+      });
+
+      it('should call the _checkDataURLs function', ()=>{
+        expect(carousel._checkDataURLs).toHaveBeenCalled();
+      });
+    });
+
+    describe('when there is more than 1 item in this.items', ()=>{
+      beforeEach(()=>{
+        carousel._getItems();
+      });
+
+      it('should call the _createArrowNavContainer function', ()=>{
+        expect(carousel._createArrowNavContainer).toHaveBeenCalled();
+      });
+
+      it('should call the _createDotsNavContainer function', ()=>{
+        expect(carousel._createDotsNavContainer).toHaveBeenCalled();
+      });
+    });
+
+    describe('when there is only 1 item in this.items', ()=>{
+      let lastItem;
+
+      beforeEach(()=>{
+        lastItem = this.items[1];
+
+        lastItem.parentNode.removeChild(lastItem);
+
+        carousel._getItems();
+      });
+
+      it('should not call the _createArrowNavContainer function', ()=>{
+        expect(carousel._createArrowNavContainer).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _createDotsNavContainer function', ()=>{
+        expect(carousel._createDotsNavContainer).not.toHaveBeenCalled();
+      });
+    });
   });
 });
 /* eslint-enable */
