@@ -566,5 +566,43 @@ describe('carousel', function(){
       });
     });
   });
+
+  describe('_manageListeners function', ()=>{
+    let eventManager;
+
+    beforeEach(()=>{
+      eventManager = carousel._manageListeners();
+    });
+
+    it('should return the addListener function', ()=>{
+      expect(eventManager.addListener).toBeDefined();
+    });
+
+    it('should return the removeAll function', ()=>{
+      expect(eventManager.removeAll).toBeDefined();
+    });
+  });
+
+  describe('_next function', ()=>{
+    let clickSpy;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+
+      spyOn(carousel, '_setSelected');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        clickSpy = jasmine.createSpyObj('e', ['preventDefault']);
+
+        carousel._next(clickSpy);
+      });
+
+      it('should call e.preventDefault', ()=>{
+        expect(clickSpy.preventDefault).toHaveBeenCalled();
+      });
+    });
+  });
 });
 /* eslint-enable */
