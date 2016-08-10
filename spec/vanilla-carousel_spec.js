@@ -97,7 +97,7 @@ function createDotsNavContainer(){
 
   div.appendChild(ul);
   dotsContainer.appendChild(div);
- 
+
   return dotsContainer;
 }
 
@@ -368,7 +368,7 @@ describe('carousel', function(){
   });
 
   // describe('_createArrowNavSvg function', ()=>{
-  //  I don't see the point in testing this 
+  //  I don't see the point in testing this
   // });
 
   describe('_createArrowNavContainer', ()=>{
@@ -414,7 +414,7 @@ describe('carousel', function(){
 
     it('should create this.dotsContainer', ()=>{
       expect(carousel.dotsContainer.id).toEqual('carousel-dots-container');
-    })
+    });
 
     it('should call the _createDotsNav function', ()=>{
       expect(carousel._createDotsNav).toHaveBeenCalled();
@@ -519,7 +519,7 @@ describe('carousel', function(){
     beforeEach(()=>{
       spyOn(carousel, '_checkDataURLs');
       spyOn(carousel, '_createArrowNavContainer');
-        spyOn(carousel, '_createDotsNavContainer');
+      spyOn(carousel, '_createDotsNavContainer');
     });
 
     describe('under all circumstances', ()=>{
@@ -547,12 +547,12 @@ describe('carousel', function(){
     });
 
     describe('when there is only 1 item in this.items', ()=>{
-      let lastItem;
+      let itemTwo;
 
       beforeEach(()=>{
-        lastItem = this.items[1];
+        itemTwo = this.items[1];
 
-        lastItem.parentNode.removeChild(lastItem);
+        itemTwo.parentNode.removeChild(itemTwo);
 
         carousel._getItems();
       });
@@ -601,6 +601,437 @@ describe('carousel', function(){
 
       it('should call e.preventDefault', ()=>{
         expect(clickSpy.preventDefault).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.animating is false', ()=>{
+      beforeEach(()=>{
+        carousel.animating = false;
+        carousel.itemActive = 0;
+        carousel.itemOut = 1;
+      });
+
+      describe('under all circumstances', ()=>{
+        beforeEach(()=>{
+          carousel._next(clickSpy);
+        });
+
+        it('should set this.itemOut to be the value of this.itemActive', ()=>{
+          expect(carousel.itemOut).toEqual(0);
+        });
+
+        it('should call the _setSelected function with "next" as a parameter', ()=>{
+          expect(carousel._setSelected).toHaveBeenCalledWith('next');
+        });
+      });
+
+      describe('and this.itemActive is less than this.items.length - 1', ()=>{
+        beforeEach(()=>{
+          carousel._next(clickSpy);
+        });
+
+        it('should increment this.itemActive by 1', ()=>{
+          expect(carousel.itemActive).toEqual(1);
+        });
+      });
+
+      describe('and this.itemActive is greater than this.items.length - 1', ()=>{
+        beforeEach(()=>{
+          carousel.itemActive = 2;
+
+          carousel._next(clickSpy);
+        });
+
+        it('should set this.itemActive to 0', ()=>{
+          expect(carousel.itemActive).toEqual(0);
+        });
+      });
+    });
+
+    describe('when this.animating is true', ()=>{
+      beforeEach(()=>{
+        carousel.animating = true;
+        carousel.itemActive = 0;
+        carousel.itemOut = 1;
+
+        carousel._next(clickSpy);
+      });
+
+      it('should not set this.itemOut to be the value of this.itemActive', ()=>{
+        expect(carousel.itemOut).not.toEqual(0);
+      });
+
+      it('should not change the value of this.itemActive', ()=>{
+        expect(carousel.itemActive).toEqual(0);
+      });
+
+      it('should not call the _setSelected function', ()=>{
+        expect(carousel._setSelected).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('_previous function', ()=>{
+    let clickSpy;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+
+      spyOn(carousel, '_setSelected');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        clickSpy = jasmine.createSpyObj('e', ['preventDefault']);
+
+        carousel._previous(clickSpy);
+      });
+
+      it('should call e.preventDefault', ()=>{
+        expect(clickSpy.preventDefault).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.animating is false', ()=>{
+      beforeEach(()=>{
+        carousel.animating = false;
+        carousel.itemActive = 1;
+        carousel.itemOut = 0;
+      });
+
+      describe('under all circumstances', ()=>{
+        beforeEach(()=>{
+          carousel._previous(clickSpy);
+        });
+
+        it('should set this.itemOut to be the value of this.itemActive', ()=>{
+          expect(carousel.itemOut).toEqual(1);
+        });
+
+        it('should call the _setSelected function with "previous" as a parameter', ()=>{
+          expect(carousel._setSelected).toHaveBeenCalledWith('previous');
+        });
+      });
+
+      describe('and this.itemActive is greater than 0', ()=>{
+        beforeEach(()=>{
+          carousel._previous(clickSpy);
+        });
+
+        it('should decrement this.itemActive by 1', ()=>{
+          expect(carousel.itemActive).toEqual(0);
+        });
+      });
+
+      describe('and this.itemActive is not greater than 0', ()=>{
+        beforeEach(()=>{
+          carousel.itemActive = 0;
+
+          carousel._previous(clickSpy);
+        });
+
+        it('should set this.itemActive to this.items.length - 1', ()=>{
+          expect(carousel.itemActive).toEqual(1);
+        });
+      });
+    });
+
+    describe('when this.animating is true', ()=>{
+      beforeEach(()=>{
+        carousel.animating = true;
+        carousel.itemActive = 0;
+        carousel.itemOut = 1;
+
+        carousel._previous(clickSpy);
+      });
+
+      it('should not set this.itemOut to be the value of this.itemActive', ()=>{
+        expect(carousel.itemOut).not.toEqual(0);
+      });
+
+      it('should not change the value of this.itemActive', ()=>{
+        expect(carousel.itemActive).toEqual(0);
+      });
+
+      it('should not call the _setSelected function', ()=>{
+        expect(carousel._setSelected).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('_restartTimer function', ()=>{
+    beforeEach(()=>{
+      spyOn(carousel, '_stopAutoPlay');
+
+      carousel._restartTimer();
+    });
+
+    it('should call the _stopAutoPlay function', ()=>{
+      expect(carousel._stopAutoPlay).toHaveBeenCalled();
+    });
+
+    it('should set this.timer', ()=>{
+      expect(carousel.timer).toBeDefined();
+    });
+  });
+
+  describe('_setBackgroundImages function', ()=>{
+    let imageContainer, item;
+
+    beforeEach(()=>{
+      item = this.items[1];
+      imageContainer = item.children[0];
+      this.device = 'mobile';
+
+      carousel._setBackgroundImages(imageContainer, this.device);
+    });
+
+    it('should set the background image of the image container according to the device parameter', ()=>{
+      expect(imageContainer.style.backgroundImage).toContain('mobile');
+    });
+  });
+
+  describe('_setDefaultSelected function', ()=>{
+    let itemOne, itemTwo, windowWidth;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+      carousel.itemActive = 0;
+      itemOne = this.items[0];
+      itemTwo = this.items[1];
+      windowWidth = carousel.config.element.clientWidth + 'px';
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel._setDefaultSelected();
+      });
+
+      it('should set the left CSS property of the active item to 0px', ()=>{
+        expect(itemOne.style.left).toEqual('0px');
+      });
+    });
+
+    describe('when items.length is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel._setDefaultSelected();
+      });
+
+      it('should set the left CSS property of each item to be the same as windowWidth', ()=>{
+        expect(itemTwo.style.left).toEqual(windowWidth);
+      });
+    });
+
+    describe('when this.config.autoPlay is true and items.length is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = true;
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setDefaultSelected();
+      });
+
+      it('should call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).toHaveBeenCalled();
+      });
+
+      it('should call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is true and items.length is 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = true;
+
+        carousel.items = _.slice(carousel.items, 0, 1);
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setDefaultSelected();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is false and items.length is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = false;
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setDefaultSelected();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is false and items.length is 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = false;
+
+        carousel.items = _.slice(carousel.items, 0, 1);
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setDefaultSelected();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('_setDotClass function', ()=>{
+    let a, clickedDot, li, otherDot, ul;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+      ul = this.dotsContainer.getElementsByTagName('ul')[0];
+
+      _.forEach(carousel.items, function(item){
+        a = document.createElement('a');
+        li = document.createElement('li');
+
+        a.setAttribute('href', '#');
+
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+
+      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      clickedDot = carousel.dots[0];
+      otherDot = carousel.dots[1];
+
+      carousel._setDotClass(clickedDot);
+    });
+
+    it('should remove the "active" class from all of the dots', ()=>{
+      expect(otherDot.className).not.toContain('active');
+    });
+
+    it('should add the "active" class to clickedDot', ()=>{
+      expect(clickedDot.className).toContain('active');
+    });
+  });
+
+  describe('_setPosition function', ()=>{
+    let direction, functionCall, position;
+
+    beforeEach(()=>{
+      position = '1000';
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        direction = 'next';
+
+        functionCall = carousel._setPosition(direction, position);
+      });
+
+      it('should return the inPos method ', ()=>{
+        expect(functionCall.inPos).toBeDefined();
+      });
+
+      it('should return the outPos method ', ()=>{
+        expect(functionCall.outPos).toBeDefined();
+      });
+    });
+
+    describe('when the direction parameter is "next"', ()=>{
+      beforeEach(()=>{
+        direction = 'next';
+      });
+
+      describe('and this.config.naturalScroll is true', ()=>{
+        beforeEach(()=>{
+          carousel.config.naturalScroll = true;
+
+          functionCall = carousel._setPosition(direction, position);
+        });
+
+        it('the inPos method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.inPos).toEqual('1000px');
+        });
+
+        it('the outPos method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.outPos).toEqual('-1000px');
+        });
+      });
+
+      describe('and this.config.naturalScroll is false', ()=>{
+        beforeEach(()=>{
+          carousel.config.naturalScroll = false;
+
+          functionCall = carousel._setPosition(direction, position);
+        });
+
+        it('the inPos method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.inPos).toEqual('-1000px');
+        });
+
+        it('the outPos method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.outPos).toEqual('1000px');
+        });
+      });
+    });
+
+    describe('when the direction parameter is "previous"', ()=>{
+      beforeEach(()=>{
+        direction = 'previous';
+      });
+
+      describe('and this.config.naturalScroll is true', ()=>{
+        beforeEach(()=>{
+          carousel.config.naturalScroll = true;
+
+          functionCall = carousel._setPosition(direction, position);
+        });
+
+        it('the inPos method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.inPos).toEqual('-1000px');
+        });
+
+        it('the outPos method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.outPos).toEqual('1000px');
+        });
+      });
+
+      describe('and this.config.naturalScroll is false', ()=>{
+        beforeEach(()=>{
+          carousel.config.naturalScroll = false;
+
+          functionCall = carousel._setPosition(direction, position);
+        });
+
+        it('the inPos method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.inPos).toEqual('1000px');
+        });
+
+        it('the outPos method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.outPos).toEqual('-1000px');
+        });
       });
     });
   });

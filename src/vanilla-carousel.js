@@ -318,10 +318,9 @@ class CarouselClass{
   }
 
   _restartTimer(){
-    if (!this.animating || this.items.length < 2){
-      this._stopAutoPlay();
-      this.timer = window.setInterval(this._startAutoPlay.bind(this), 5000);
-    }
+    this._stopAutoPlay();
+
+    this.timer = window.setInterval(this._startAutoPlay.bind(this), 5000);
   }
 
   _setBackgroundImages(imageContainer, device){
@@ -332,6 +331,7 @@ class CarouselClass{
 
   _setDefaultSelected(){
     let items = _.difference(this.items, [this.items[this.itemActive]]);
+
     let windowWidth = this.config.element.clientWidth;
 
     this.items[this.itemActive].style.left = 0;
