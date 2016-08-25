@@ -1035,5 +1035,100 @@ describe('carousel', function(){
       });
     });
   });
+
+  describe('_setSelected function', ()=>{
+    let direction, dot, itemIn, itemOut, ul, windowWidth;
+
+    beforeEach(()=>{
+      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      carousel.eventManager = carousel._manageListeners();
+      carousel.itemActive = 1;
+      carousel.itemIn = 1;
+      carousel.itemOut = 0;
+      carousel.items = this.items;
+      itemIn = this.items[1];
+      itemOut = this.items[0];
+      windowWidth = carousel.config.element.clientWidth + 'px';
+
+      spyOn(carousel, '_animateItemStart');
+      spyOn(carousel, '_setDotClass');
+      spyOn(carousel, '_setPosition').and.returnValue({inPos: '1000px', outPos: '-1000px'});
+      spyOn(carousel.eventManager, 'removeAll');
+
+      carousel._setSelected('next');
+    });
+
+    it('should call the carousel.eventManager.removeAll function', ()=>{
+      expect(carousel.eventManager.removeAll).toHaveBeenCalled();
+    });
+
+    it('should set this.itemIn to be the value of this.itemActive', ()=>{
+      expect(carousel.itemIn).toEqual(1);
+    });
+
+    it('should call the _animateItemStart function', ()=>{
+      expect(carousel._animateItemStart).toHaveBeenCalled();
+    });
+
+    it('should call the _animateItemStart function with the right parameters for the first call', ()=>{
+      expect(carousel._animateItemStart.calls.argsFor(0)).toEqual([itemIn, '1000px', 0]);
+    });
+
+    it('should call the _animateItemStart function with the right parameters for the second call', ()=>{
+      expect(carousel._animateItemStart.calls.argsFor(1)).toEqual([itemOut, 0, '-1000px']);
+    });
+
+    it('should call the _setDotClass function with the active dot as the parameter', ()=>{
+      expect(carousel._setDotClass).toHaveBeenCalled();
+    });
+  });
+
+  describe('_startAutoPlay function', ()=>{
+    beforeEach(()=>{
+      carousel.items = this.items;
+
+      spyOn(carousel, '_setSelected');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 0;
+
+        carousel._startAutoPlay();
+      });
+
+      it('should set this.itemOut to be the same value as this.itemActive', ()=>{
+        expect(carousel.itemOut).toEqual(0);
+      });
+
+      it('should call the _setSelected function with "next" as a parameter', ()=>{
+        expect(carousel._setSelected).toHaveBeenCalledWith('next');
+      });
+    });
+
+    describe('when this.itemActive is less than this.items.length - 1', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 0;
+
+        carousel._startAutoPlay();
+      });
+
+      it('should increment this.itemActive by 1', ()=>{
+        expect(carousel.itemActive).toEqual(1);
+      });
+    });
+
+    describe('when this.itemActive is greater than this.items.length - 1', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 2;
+
+        carousel._startAutoPlay();
+      });
+
+      it('should set this.itemActive to 0', ()=>{
+        expect(carousel.itemActive).toEqual(0);
+      });
+    });
+  });
 });
 /* eslint-enable */
