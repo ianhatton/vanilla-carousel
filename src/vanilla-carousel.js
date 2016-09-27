@@ -191,15 +191,20 @@ class CarouselClass{
   }
 
   _createDotsNav(){
-    let a, li;
+    let a, li, span;
     let ul = this.dotsContainer.getElementsByTagName('ul')[0];
 
     _.forEach(this.items, function(item){
       a = document.createElement('a');
       li = document.createElement('li');
+      span = document.createElement('span');
 
       a.setAttribute('href', '#');
 
+      span.className = 'hidden';
+      span.innerHTML = 'View carousel item';
+
+      a.appendChild(span);
       li.appendChild(a);
       ul.appendChild(li);
     });
