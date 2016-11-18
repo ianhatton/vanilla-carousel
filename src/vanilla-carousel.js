@@ -1,10 +1,8 @@
-const _              = require('lodash/core');
-_.difference         = require('lodash/difference');
-_.includes           = require('lodash/includes');
-_.times              = require('lodash/times');
-const ViewportDetect = require('viewport-detection-es6');
+const _                   = require('lodash/core');
+_.includes = require("lodash/includes");
+const ViewportDetectionClass = require('viewport-detection-es6');
 
-const viewport = new ViewportDetect();
+const viewport = new ViewportDetectionClass();
 
 class CarouselClass{
   constructor(config = {}, init = true){
@@ -35,14 +33,15 @@ class CarouselClass{
   }
 
   _render(){
+    this._setCarouselId();
     this._getItems();
-    this._setDefaultSelected();
+    this._setSelectedDefaults();
   }
 
   _addDotClickListeners(){
-    _.forEach(this.dots, function(dot){
+    _.forEach(this.dots, (dot)=>{
       dot.addEventListener('click', this._dotClick.bind(this), false);
-    }.bind(this));
+    });
   }
 
   _addFocusListeners(){
@@ -55,30 +54,24 @@ class CarouselClass{
                                         , false);
   }
 
-  _addNextListener(){
-    this.nextButton.addEventListener('click'
-                                    , this._next.bind(this)
-                                    , false);
+  _addNavigationListener(button, direction){
+    button.addEventListener('click',
+                            this._navigationClick.bind(this, button, direction)
+                            , false);
   }
 
-  _addPreviousListener(){
-    this.previousButton.addEventListener('click'
-                                        , this._previous.bind(this)
-                                        , false);
-  }
-
-  _animateItemFinish(item, e){
+  _animateItemFinish(item){
     this.animating = false;
 
     item.className = item.className.replace(/(?:^|\s)animating(?!\S)/g, '');
   }
 
-  _animateItemStart(item, st, end){
-    item.style.left = st;
+  _animateItemStart(item, fromPosition, toPosition){
+    item.style.left = fromPosition;
 
     _.delay(()=>{
       this.animating = true;
-      item.style.left = end;
+      item.style.left = toPosition;
       item.className += ' animating';
     }, 100);
 
@@ -90,7 +83,7 @@ class CarouselClass{
   _checkDataURLs(){
     let imageContainer, imageMobile, imageTablet, imageDesktop;
 
-    _.forEach(this.items, function(item){
+    _.forEach(this.items, (item)=>{
       imageContainer = this._skipTextNodes(item, 'firstChild');
       imageMobile = imageContainer.getAttribute('data-mobile');
       imageTablet = imageContainer.getAttribute('data-tablet');
@@ -100,11 +93,11 @@ class CarouselClass{
       if ((!_.isEmpty(imageMobile)) && (!_.isEmpty(imageTablet)) && (!_.isEmpty(imageDesktop))){
       /* eslint-enable */
         item.setAttribute('data-urls', 'true');
-        this._setBackgroundImages(imageContainer, this.device);
+        this._setBackgroundImage(imageContainer, this.device);
       } else {
         item.setAttribute('data-urls', 'false');
       }
-    }.bind(this));
+    });
   }
 
   _createArrowNav(direction, parent){
@@ -113,24 +106,13 @@ class CarouselClass{
     a = document.createElement('a');
     span = document.createElement('span');
 
-    a.id = 'carousel-' + direction;
     a.setAttribute('href', '#');
 
-    if (direction === 'previous'){
-      span.innerHTML = 'Previous';
-      a.appendChild(span);
-      svg = this._createArrowNavSvg(direction);
-      a.appendChild(svg);
-      this.previousButton = a;
-      this._addPreviousListener();
-    } else {
-      span.innerHTML = 'Next';
-      a.appendChild(span);
-      svg = this._createArrowNavSvg(direction);
-      a.appendChild(svg);
-      this.nextButton = a;
-      this._addNextListener();
-    }
+    span.innerHTML = direction;
+    a.appendChild(span);
+    svg = this._createArrowNavSvg(direction);
+    a.appendChild(svg);
+    this._addNavigationListener(a, direction);
 
     parent.appendChild(a);
   }
@@ -173,19 +155,19 @@ class CarouselClass{
   }
 
   _createArrowNavContainer(){
-    let li, ul;
+    let i, li, ul;
 
     ul = document.createElement('ul');
     ul.className = 'carousel-arrows-container';
 
-    _.times(2, function(i){
+    for (i = 0; i < 2; i++){
       li = document.createElement('li');
 
       li.className = i === 0 ? 'previous' : 'next';
       this._createArrowNav(i === 0 ? 'previous' : 'next', li);
 
       ul.appendChild(li);
-    }.bind(this));
+    }
 
     this.config.element.appendChild(ul);
   }
@@ -194,7 +176,7 @@ class CarouselClass{
     let a, li, span;
     let ul = this.dotsContainer.getElementsByTagName('ul')[0];
 
-    _.forEach(this.items, function(item){
+    _.forEach(this.items, ()=>{
       a = document.createElement('a');
       li = document.createElement('li');
       span = document.createElement('span');
@@ -202,7 +184,7 @@ class CarouselClass{
       a.setAttribute('href', '#');
 
       span.className = 'hidden';
-      span.innerHTML = 'View carousel item';
+      span.innerHTML = 'view carousel item';
 
       a.appendChild(span);
       li.appendChild(a);
@@ -237,7 +219,6 @@ class CarouselClass{
         this.itemOut = this.itemActive;
         this.itemActive = index;
 
-        this._setDotClass(e.target);
         this._setSelected('next');
       }
     }
@@ -247,7 +228,9 @@ class CarouselClass{
     this.dots = this.dotsContainer.getElementsByTagName('a');
 
     this._addDotClickListeners();
-    this._setDotClass((this.dots[this.itemActive]));
+    this._setDotAriaSelectedDefaults();
+    this._setDotAriaControls();
+    this._setDotClass();
   }
 
   _getItems(){
@@ -261,6 +244,8 @@ class CarouselClass{
     }
 
     this._checkDataURLs();
+    this._setItemAriaHiddenDefaults();
+    this._setItemId();
   }
 
   _manageListeners(){
@@ -277,7 +262,7 @@ class CarouselClass{
         target.addEventListener(event, fn, false);
       }
 
-      , removeAll: ()=>{
+      , removeListeners: ()=>{
         if (listenerArray.length > 0){
           _.forEach(listenerArray, (cur)=>{
             cur.target.removeEventListener(cur.event, cur.fn, false);
@@ -290,36 +275,38 @@ class CarouselClass{
     };
   }
 
-  _next(e){
+  _navigationClick(button, direction, e){
     e.preventDefault();
 
     if (!this.animating){
       this.itemOut = this.itemActive;
 
-      if (this.itemActive < this.items.length - 1){
-        this.itemActive++;
+      if (direction === 'next'){
+        this._next();
       } else {
-        this.itemActive = 0;
+        this._previous();
       }
-
-      this._setSelected('next');
     }
   }
 
-  _previous(e){
-    e.preventDefault();
-
-    if (!this.animating){
-      this.itemOut = this.itemActive;
-
-      if (this.itemActive > 0){
-        this.itemActive--;
-      } else {
-        this.itemActive = this.items.length - 1;
-      }
-
-      this._setSelected('previous');
+  _next(){
+    if (this.itemActive < this.items.length - 1){
+      this.itemActive++;
+    } else {
+      this.itemActive = 0;
     }
+
+    this._setSelected('next');
+  }
+
+  _previous(){
+    if (this.itemActive > 0){
+      this.itemActive--;
+    } else {
+      this.itemActive = this.items.length - 1;
+    }
+
+    this._setSelected('previous');
   }
 
   _restartTimer(){
@@ -328,77 +315,136 @@ class CarouselClass{
     this.timer = window.setInterval(this._startAutoPlay.bind(this), 5000);
   }
 
-  _setBackgroundImages(imageContainer, device){
+  _setBackgroundImage(imageContainer, device){
     let url = imageContainer.getAttribute('data-' + device);
 
     imageContainer.style.backgroundImage = 'url(' + url + ')';
   }
 
-  _setDefaultSelected(){
-    let items = _.difference(this.items, [this.items[this.itemActive]]);
-
-    let windowWidth = this.config.element.clientWidth;
-
-    this.items[this.itemActive].style.left = 0;
-
-    if (items.length > 0){
-      _.forEach(items, function(item){
-        item.style.left = windowWidth + 'px';
-      });
-    }
-
-    if (this.config.autoPlay && items.length > 0){
-      this._addFocusListeners();
-      this._restartTimer();
-    }
+  _setCarouselId(){
+    this.config.element.id = _.uniqueId('carousel-');
   }
 
-  _setDotClass(clickedDot){
-    _.forEach(this.dots, function(dot){
-      let className = dot.className;
-
-      dot.className = className.replace(/(?:^|\s)active(?!\S)/g, '');
+  _setDotAriaControls(){
+    _.forEach(this.dots, (dot, i)=>{
+      dot.setAttribute('aria-controls'
+                       , `${this.config.element.id}-item-${i + 1}`);
     });
+  }
 
-    clickedDot.className += ' active';
+  _setDotAriaSelected(){
+    _.forEach(this.dots, (dot)=>{
+      if (dot === this.dots[this.itemActive]){
+        dot.setAttribute('aria-selected', 'true');
+      } else {
+        let ariaSelected = dot.getAttribute('aria-selected');
+
+        if (ariaSelected === 'true'){
+          dot.setAttribute('aria-selected', 'false');
+        }
+      }
+    });
+  }
+
+  _setDotAriaSelectedDefaults(){
+    _.forEach(this.dots, (dot)=>{
+      dot.setAttribute('aria-selected'
+                       , dot === this.dots[this.itemActive] ?
+                       'true' : 'false');
+    });
+  }
+
+  _setDotClass(){
+    _.forEach(this.dots, (dot)=>{
+      if (dot === this.dots[this.itemActive]){
+        dot.className += ' active';
+      } else {
+        let className = dot.className;
+
+        if (_.includes(className, 'active')){
+          dot.className = className.replace(/(?:^|\s)active(?!\S)/g, '');
+        }
+      }
+    });
+  }
+
+  _setItemAriaHidden(){
+    _.forEach(this.items, (item)=>{
+      if (item === this.items[this.itemActive]){
+        item.setAttribute('aria-hidden', 'false');
+      } else {
+        let ariaHidden = item.getAttribute('aria-hidden');
+
+        if (ariaHidden === 'false'){
+          item.setAttribute('aria-hidden', 'true');
+        }
+      }
+    });
+  }
+
+  _setItemAriaHiddenDefaults(){
+    _.forEach(this.items, (item)=>{
+      item.setAttribute('aria-hidden'
+                        , item === this.items[this.itemActive] ?
+                        'false' : 'true');
+    });
+  }
+
+  _setItemId(){
+    _.forEach(this.items, (item, i)=>{
+      item.id = `${this.config.element.id}-item-${i + 1}`;
+    });
   }
 
   _setPosition(direction, position){
-    let inPos, outPos;
+    let inPosition, outPosition;
 
     if (direction === 'next'){
       if (this.config.naturalScroll){
-        inPos = position + 'px';
-        outPos = -position + 'px';
+        inPosition = position;
+        outPosition = -position;
       } else {
-        inPos = -position + 'px';
-        outPos = position + 'px';
+        inPosition = -position;
+        outPosition = position;
       }
     } else if (direction === 'previous'){
       if (this.config.naturalScroll){
-        inPos = -position + 'px';
-        outPos = position + 'px';
+        inPosition = -position;
+        outPosition = position;
       } else {
-        inPos = position + 'px';
-        outPos = -position + 'px';
+        inPosition = position;
+        outPosition = -position;
       }
     }
 
     return {
-      inPos: inPos
-      , outPos: outPos
+      inPosition: inPosition + 'px'
+      , outPosition: outPosition + 'px'
     };
   }
 
   _setSelected(direction){
-    let windowWidth = this.config.element.clientWidth;
-    let pos = this._setPosition(direction, windowWidth);
+    let position = this._setPosition(direction, this.size.width);
 
-    this.eventManager.removeAll();
+    this.eventManager.removeListeners();
     this.itemIn = this.itemActive;
-    this._animateItemStart(this.items[this.itemIn], pos.inPos, 0);
-    this._animateItemStart(this.items[this.itemOut], 0, pos.outPos);
-    this._setDotClass((this.dots[this.itemActive]));
+    this._animateItemStart(this.items[this.itemIn], position.inPosition, 0);
+    this._animateItemStart(this.items[this.itemOut], 0, position.outPosition);
+    this._setDotAriaSelected();
+    this._setDotClass();
+    this._setItemAriaHidden();
+  }
+
+  _setSelectedDefaults(){
+    _.forEach(this.items, (item)=>{
+      item.style.left = item === this.items[this.itemActive] ?
+                        0 : this.size.width + 'px';
+    });
+
+    if (this.config.autoPlay && this.items.length > 0){
+      this._addFocusListeners();
+      this._restartTimer();
+    }
   }
 
   _skipTextNodes(el, method){
@@ -439,7 +485,7 @@ class CarouselClass{
 
       if (item.getAttribute('data-urls') === 'true'){
         let imageContainer = this._skipTextNodes(item, 'firstChild');
-        this._setBackgroundImages(imageContainer, this.device);
+        this._setBackgroundImage(imageContainer, this.device);
       }
     }
 

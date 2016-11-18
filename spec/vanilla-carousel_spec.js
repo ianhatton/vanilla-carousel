@@ -136,7 +136,7 @@ describe('carousel', function(){
 
     it('should set this.eventManager to be a call to the _manageListeners function', ()=>{
       expect(carousel.eventManager.addListener).toBeDefined();
-      expect(carousel.eventManager.removeAll).toBeDefined();
+      expect(carousel.eventManager.removeListeners).toBeDefined();
     });
 
     it('should set this.itemActive to 0', ()=>{
@@ -177,7 +177,7 @@ describe('carousel', function(){
   describe('_render function', ()=>{
     beforeEach(()=>{
       spyOn(carousel, '_getItems');
-      spyOn(carousel, '_setDefaultSelected');
+      spyOn(carousel, '_setSelectedDefaults');
 
       carousel._render();
     });
@@ -186,8 +186,8 @@ describe('carousel', function(){
       expect(carousel._getItems).toHaveBeenCalled();
     });
 
-    it('should call the _setDefaultSelected function', ()=>{
-      expect(carousel._setDefaultSelected).toHaveBeenCalled();
+    it('should call the _setSelectedDefaults function', ()=>{
+      expect(carousel._setSelectedDefaults).toHaveBeenCalled();
     });
   });
 
@@ -279,7 +279,7 @@ describe('carousel', function(){
       imageContainer = item.children[0];
 
       spyOn(carousel, '_skipTextNodes').and.returnValue(imageContainer);
-      spyOn(carousel, '_setBackgroundImages');
+      spyOn(carousel, '_setBackgroundImage');
     });
 
     describe('when there is only a desktop image', ()=>{
@@ -305,14 +305,14 @@ describe('carousel', function(){
         expect(item.getAttribute('data-urls')).toEqual('true');
       });
 
-      it('should call the _setBackgroundImages function with imageContainer and this.device as parameters', ()=>{
-        expect(carousel._setBackgroundImages).toHaveBeenCalledWith(imageContainer, 'massive swanky monitor');
+      it('should call the _setBackgroundImage function with imageContainer and this.device as parameters', ()=>{
+        expect(carousel._setBackgroundImage).toHaveBeenCalledWith(imageContainer, 'massive swanky monitor');
       });
     });
   });
 
   describe('_createArrowNav function', ()=>{
-    let li, ul, svg;
+    let li, svg, ul;
 
     beforeEach(()=>{
       li = document.createElement('li');
@@ -323,46 +323,35 @@ describe('carousel', function(){
 
       ul.appendChild(li);
 
+      spyOn(carousel, '_addNavigationListener');
       spyOn(carousel, '_createArrowNavSvg').and.returnValue(svg);
     });
 
     describe('when the direction parameter is "previous"', ()=>{
       beforeEach(()=>{
-        spyOn(carousel, '_addPreviousListener');
-
         carousel._createArrowNav('previous', li);
       });
 
-      it('should call the _createArrowNavSvg function with a parameter of "previous"', ()=>{
+      it('should call the _createArrowNavSvg function with "previous" as a parameter', ()=>{
         expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('previous');
       });
 
-      it('should create this.previousButton', ()=>{
-        expect(carousel.previousButton.id).toEqual('carousel-previous');
-      });
-
-      it('should call the _addPreviousListener function', ()=>{
-        expect(carousel._addPreviousListener).toHaveBeenCalled();
+      it('should call the _addNavigationListener function with "previous" as a parameter', ()=>{
+        expect(carousel._addNavigationListener.calls.mostRecent().args[1]).toEqual('previous');
       });
     });
 
     describe('when the direction parameter is "next"', ()=>{
       beforeEach(()=>{
-        spyOn(carousel, '_addNextListener');
-
         carousel._createArrowNav('next', li);
       });
 
-      it('should call the _createArrowNavSvg function with a parameter of "next"', ()=>{
+      it('should call the _createArrowNavSvg function with "next" as a parameter', ()=>{
         expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('next');
       });
 
-      it('should create this.nextButton', ()=>{
-        expect(carousel.nextButton.id).toEqual('carousel-next');
-      });
-
-      it('should call the _addNextListener function', ()=>{
-        expect(carousel._addNextListener).toHaveBeenCalled();
+      it('should call the _addNavigationListener function with "next" as a parameter', ()=>{
+        expect(carousel._addNavigationListener.calls.mostRecent().args[1]).toEqual('next');
       });
     });
   });
@@ -429,7 +418,6 @@ describe('carousel', function(){
 
       clickSpy = jasmine.createSpyObj('e', ['preventDefault', 'target']);
 
-      spyOn(carousel, '_setDotClass');
       spyOn(carousel, '_setSelected');
     });
 
@@ -460,10 +448,6 @@ describe('carousel', function(){
         expect(carousel.itemActive).toEqual(-1);
       });
 
-      it('should call the _setDotClass function', ()=>{
-        expect(carousel._setDotClass).toHaveBeenCalled();
-      });
-
       it('should call the _setSelected function', ()=>{
         expect(carousel._setSelected).toHaveBeenCalled();
       });
@@ -484,10 +468,6 @@ describe('carousel', function(){
 
       it('should not set this.active to be the value of index', ()=>{
         expect(carousel.itemActive).not.toEqual(-1);
-      });
-
-      it('should not call the _setDotClass function', ()=>{
-        expect(carousel._setDotClass).not.toHaveBeenCalled();
       });
 
       it('should not call the _setSelected function', ()=>{
@@ -578,25 +558,30 @@ describe('carousel', function(){
       expect(eventManager.addListener).toBeDefined();
     });
 
-    it('should return the removeAll function', ()=>{
-      expect(eventManager.removeAll).toBeDefined();
+    it('should return the removeListeners function', ()=>{
+      expect(eventManager.removeListeners).toBeDefined();
     });
   });
 
-  describe('_next function', ()=>{
-    let clickSpy;
+  describe('_navigationClick function', ()=>{
+    let a, clickSpy;
 
     beforeEach(()=>{
-      carousel.items = this.items;
+      a = document.createElement('a');
+      a.setAttribute('href', "#");
 
-      spyOn(carousel, '_setSelected');
+      carousel.itemActive = 0;
+      carousel.itemOut = 1;
+
+      clickSpy = jasmine.createSpyObj('e', ['preventDefault']);
+
+      spyOn(carousel, '_next');
+      spyOn(carousel, '_previous');
     });
 
     describe('under all circumstances', ()=>{
       beforeEach(()=>{
-        clickSpy = jasmine.createSpyObj('e', ['preventDefault']);
-
-        carousel._next(clickSpy);
+        carousel._navigationClick(a, 'next', clickSpy);
       });
 
       it('should call e.preventDefault', ()=>{
@@ -607,43 +592,43 @@ describe('carousel', function(){
     describe('when this.animating is false', ()=>{
       beforeEach(()=>{
         carousel.animating = false;
-        carousel.itemActive = 0;
-        carousel.itemOut = 1;
       });
 
       describe('under all circumstances', ()=>{
         beforeEach(()=>{
-          carousel._next(clickSpy);
+          carousel._navigationClick(a, 'next', clickSpy);
         });
 
         it('should set this.itemOut to be the value of this.itemActive', ()=>{
           expect(carousel.itemOut).toEqual(0);
         });
+      });
 
-        it('should call the _setSelected function with "next" as a parameter', ()=>{
-          expect(carousel._setSelected).toHaveBeenCalledWith('next');
+      describe('and the direction parameter is "next"', ()=>{
+        beforeEach(()=>{
+          carousel._navigationClick(a, 'next', clickSpy);
+        });
+
+        it('should call the _next function', ()=>{
+          expect(carousel._next).toHaveBeenCalled();
+        });
+
+        it('should not call the _previous function', ()=>{
+          expect(carousel._previous).not.toHaveBeenCalled();
         });
       });
 
-      describe('and this.itemActive is less than this.items.length - 1', ()=>{
+      describe('and the direction parameter is "previous"', ()=>{
         beforeEach(()=>{
-          carousel._next(clickSpy);
+          carousel._navigationClick(a, 'previous', clickSpy);
         });
 
-        it('should increment this.itemActive by 1', ()=>{
-          expect(carousel.itemActive).toEqual(1);
-        });
-      });
-
-      describe('and this.itemActive is greater than this.items.length - 1', ()=>{
-        beforeEach(()=>{
-          carousel.itemActive = 2;
-
-          carousel._next(clickSpy);
+        it('should call the _previous function', ()=>{
+          expect(carousel._previous).toHaveBeenCalled();
         });
 
-        it('should set this.itemActive to 0', ()=>{
-          expect(carousel.itemActive).toEqual(0);
+        it('should not call the _next function', ()=>{
+          expect(carousel._next).not.toHaveBeenCalled();
         });
       });
     });
@@ -651,29 +636,26 @@ describe('carousel', function(){
     describe('when this.animating is true', ()=>{
       beforeEach(()=>{
         carousel.animating = true;
-        carousel.itemActive = 0;
-        carousel.itemOut = 1;
 
-        carousel._next(clickSpy);
+        carousel._navigationClick(a, 'next', clickSpy);
       });
 
       it('should not set this.itemOut to be the value of this.itemActive', ()=>{
         expect(carousel.itemOut).not.toEqual(0);
       });
 
-      it('should not change the value of this.itemActive', ()=>{
-        expect(carousel.itemActive).toEqual(0);
+      it('should not call the _previous function', ()=>{
+        expect(carousel._previous).not.toHaveBeenCalled();
       });
 
-      it('should not call the _setSelected function', ()=>{
-        expect(carousel._setSelected).not.toHaveBeenCalled();
+      it('should not call the _next function', ()=>{
+        expect(carousel._next).not.toHaveBeenCalled();
       });
+      
     });
   });
 
-  describe('_previous function', ()=>{
-    let clickSpy;
-
+  describe('_next function', ()=>{
     beforeEach(()=>{
       carousel.items = this.items;
 
@@ -682,79 +664,73 @@ describe('carousel', function(){
 
     describe('under all circumstances', ()=>{
       beforeEach(()=>{
-        clickSpy = jasmine.createSpyObj('e', ['preventDefault']);
-
-        carousel._previous(clickSpy);
+        carousel._next();
       });
 
-      it('should call e.preventDefault', ()=>{
-        expect(clickSpy.preventDefault).toHaveBeenCalled();
+      it('should call the _setSelected function with "next" as a parameter', ()=>{
+          expect(carousel._setSelected).toHaveBeenCalledWith('next');
       });
     });
 
-    describe('when this.animating is false', ()=>{
+    describe('when this.itemActive is less than this.items.length - 1', ()=>{
       beforeEach(()=>{
-        carousel.animating = false;
-        carousel.itemActive = 1;
-        carousel.itemOut = 0;
-      });
-
-      describe('under all circumstances', ()=>{
-        beforeEach(()=>{
-          carousel._previous(clickSpy);
-        });
-
-        it('should set this.itemOut to be the value of this.itemActive', ()=>{
-          expect(carousel.itemOut).toEqual(1);
-        });
-
-        it('should call the _setSelected function with "previous" as a parameter', ()=>{
-          expect(carousel._setSelected).toHaveBeenCalledWith('previous');
-        });
-      });
-
-      describe('and this.itemActive is greater than 0', ()=>{
-        beforeEach(()=>{
-          carousel._previous(clickSpy);
-        });
-
-        it('should decrement this.itemActive by 1', ()=>{
-          expect(carousel.itemActive).toEqual(0);
-        });
-      });
-
-      describe('and this.itemActive is not greater than 0', ()=>{
-        beforeEach(()=>{
-          carousel.itemActive = 0;
-
-          carousel._previous(clickSpy);
-        });
-
-        it('should set this.itemActive to this.items.length - 1', ()=>{
-          expect(carousel.itemActive).toEqual(1);
-        });
-      });
-    });
-
-    describe('when this.animating is true', ()=>{
-      beforeEach(()=>{
-        carousel.animating = true;
         carousel.itemActive = 0;
-        carousel.itemOut = 1;
-
-        carousel._previous(clickSpy);
+        carousel._next();
       });
 
-      it('should not set this.itemOut to be the value of this.itemActive', ()=>{
-        expect(carousel.itemOut).not.toEqual(0);
+      it('should increment this.itemActive by 1', ()=>{
+        expect(carousel.itemActive).toEqual(1);
+      });
+    });
+
+    describe('when this.itemActive is greater than this.items.length - 1', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 2;
+        carousel._next();
       });
 
-      it('should not change the value of this.itemActive', ()=>{
+      it('should set this.itemActive to 0', ()=>{
         expect(carousel.itemActive).toEqual(0);
       });
+    });
+  });
 
-      it('should not call the _setSelected function', ()=>{
-        expect(carousel._setSelected).not.toHaveBeenCalled();
+  describe('_previous function', ()=>{
+    beforeEach(()=>{
+      carousel.items = this.items;
+
+      spyOn(carousel, '_setSelected');
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel._previous();
+      });
+
+      it('should call the _setSelected function with "previous" as a parameter', ()=>{
+          expect(carousel._setSelected).toHaveBeenCalledWith('previous');
+      });
+    });
+
+    describe('when this.itemActive is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 1;
+        carousel._previous();
+      });
+
+      it('should decrement this.itemActive by 1', ()=>{
+        expect(carousel.itemActive).toEqual(0);
+      });
+    });
+
+    describe('when this.itemActive is not greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.itemActive = 0;
+        carousel._previous();
+      });
+
+      it('should set this.itemActive to this.items.length - 1', ()=>{
+        expect(carousel.itemActive).toEqual(1);
       });
     });
   });
@@ -775,7 +751,7 @@ describe('carousel', function(){
     });
   });
 
-  describe('_setBackgroundImages function', ()=>{
+  describe('_setBackgroundImage function', ()=>{
     let imageContainer, item;
 
     beforeEach(()=>{
@@ -783,7 +759,7 @@ describe('carousel', function(){
       imageContainer = item.children[0];
       this.device = 'mobile';
 
-      carousel._setBackgroundImages(imageContainer, this.device);
+      carousel._setBackgroundImage(imageContainer, this.device);
     });
 
     it('should set the background image of the image container according to the device parameter', ()=>{
@@ -791,120 +767,8 @@ describe('carousel', function(){
     });
   });
 
-  describe('_setDefaultSelected function', ()=>{
-    let itemOne, itemTwo, windowWidth;
-
-    beforeEach(()=>{
-      carousel.items = this.items;
-      carousel.itemActive = 0;
-      itemOne = this.items[0];
-      itemTwo = this.items[1];
-      windowWidth = carousel.config.element.clientWidth + 'px';
-    });
-
-    describe('under all circumstances', ()=>{
-      beforeEach(()=>{
-        carousel._setDefaultSelected();
-      });
-
-      it('should set the left CSS property of the active item to 0px', ()=>{
-        expect(itemOne.style.left).toEqual('0px');
-      });
-    });
-
-    describe('when items.length is greater than 0', ()=>{
-      beforeEach(()=>{
-        carousel._setDefaultSelected();
-      });
-
-      it('should set the left CSS property of each item to be the same as windowWidth', ()=>{
-        expect(itemTwo.style.left).toEqual(windowWidth);
-      });
-    });
-
-    describe('when this.config.autoPlay is true and items.length is greater than 0', ()=>{
-      beforeEach(()=>{
-        carousel.config.autoPlay = true;
-
-        spyOn(carousel, '_addFocusListeners');
-        spyOn(carousel, '_restartTimer');
-
-        carousel._setDefaultSelected();
-      });
-
-      it('should call the _addFocusListeners function', ()=>{
-        expect(carousel._addFocusListeners).toHaveBeenCalled();
-      });
-
-      it('should call the _restartTimer function', ()=>{
-        expect(carousel._restartTimer).toHaveBeenCalled();
-      });
-    });
-
-    describe('when this.config.autoPlay is true and items.length is 0', ()=>{
-      beforeEach(()=>{
-        carousel.config.autoPlay = true;
-
-        carousel.items = _.slice(carousel.items, 0, 1);
-
-        spyOn(carousel, '_addFocusListeners');
-        spyOn(carousel, '_restartTimer');
-
-        carousel._setDefaultSelected();
-      });
-
-      it('should not call the _addFocusListeners function', ()=>{
-        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
-      });
-
-      it('should not call the _restartTimer function', ()=>{
-        expect(carousel._restartTimer).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('when this.config.autoPlay is false and items.length is greater than 0', ()=>{
-      beforeEach(()=>{
-        carousel.config.autoPlay = false;
-
-        spyOn(carousel, '_addFocusListeners');
-        spyOn(carousel, '_restartTimer');
-
-        carousel._setDefaultSelected();
-      });
-
-      it('should not call the _addFocusListeners function', ()=>{
-        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
-      });
-
-      it('should not call the _restartTimer function', ()=>{
-        expect(carousel._restartTimer).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('when this.config.autoPlay is false and items.length is 0', ()=>{
-      beforeEach(()=>{
-        carousel.config.autoPlay = false;
-
-        carousel.items = _.slice(carousel.items, 0, 1);
-
-        spyOn(carousel, '_addFocusListeners');
-        spyOn(carousel, '_restartTimer');
-
-        carousel._setDefaultSelected();
-      });
-
-      it('should not call the _addFocusListeners function', ()=>{
-        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
-      });
-
-      it('should not call the _restartTimer function', ()=>{
-        expect(carousel._restartTimer).not.toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('_setDotClass function', ()=>{
-    let a, clickedDot, li, otherDot, ul;
+  fdescribe('_setDotClass function', ()=>{
+    let a, li, ul;
 
     beforeEach(()=>{
       carousel.items = this.items;
@@ -921,18 +785,17 @@ describe('carousel', function(){
       });
 
       carousel.dots = this.dotsContainer.getElementsByTagName('a');
-      clickedDot = carousel.dots[0];
-      otherDot = carousel.dots[1];
+      carousel.itemActive = 0;
 
-      carousel._setDotClass(clickedDot);
+      carousel._setDotClass();
+    });
+
+    it('should add the "active" class to the active dot', ()=>{
+      expect(carousel.dots[0].className).toContain('active');
     });
 
     it('should remove the "active" class from all of the dots', ()=>{
-      expect(otherDot.className).not.toContain('active');
-    });
-
-    it('should add the "active" class to clickedDot', ()=>{
-      expect(clickedDot.className).toContain('active');
+      expect(carousel.dots[1].className).not.toContain('active');
     });
   });
 
@@ -1080,6 +943,115 @@ describe('carousel', function(){
 
     it('should call the _setDotClass function with the active dot as the parameter', ()=>{
       expect(carousel._setDotClass).toHaveBeenCalled();
+    });
+  });
+
+  describe('_setSelectedDefaults function', ()=>{
+    let itemOne, itemTwo;
+
+    beforeEach(()=>{
+      carousel.items = this.items;
+      carousel.itemActive = 0;
+      carousel.size = {
+        height: 391,
+        width: 1280
+      };
+      itemOne = this.items[0];
+      itemTwo = this.items[1];
+    });
+
+    describe('under all circumstances', ()=>{
+      beforeEach(()=>{
+        carousel._setSelectedDefaults();
+      });
+
+      it('should set the left CSS property of the active item to 0px', ()=>{
+        expect(itemOne.style.left).toEqual('0px');
+      });
+
+      it('should set the left CSS property of the inactive items to be the same as carousel.size.width', ()=>{
+        expect(itemTwo.style.left).toEqual('1280px');
+      });
+    });
+
+    describe('when this.config.autoPlay is true and items.length is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = true;
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setSelectedDefaults();
+      });
+
+      it('should call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).toHaveBeenCalled();
+      });
+
+      it('should call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is true and items.length is 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = true;
+
+        carousel.items = [];
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setSelectedDefaults();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is false and items.length is greater than 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = false;
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setSelectedDefaults();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when this.config.autoPlay is false and items.length is 0', ()=>{
+      beforeEach(()=>{
+        carousel.config.autoPlay = false;
+
+        carousel.items = [];
+
+        spyOn(carousel, '_addFocusListeners');
+        spyOn(carousel, '_restartTimer');
+
+        carousel._setSelectedDefaults();
+      });
+
+      it('should not call the _addFocusListeners function', ()=>{
+        expect(carousel._addFocusListeners).not.toHaveBeenCalled();
+      });
+
+      it('should not call the _restartTimer function', ()=>{
+        expect(carousel._restartTimer).not.toHaveBeenCalled();
+      });
     });
   });
 
