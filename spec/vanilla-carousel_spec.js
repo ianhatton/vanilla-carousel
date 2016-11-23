@@ -7,7 +7,6 @@ function createCarousel(){
   let carouselOuter = document.createElement('div');
 
   carouselInner.className = 'carousel-inner';
-  carouselOuter.id = 'carousel';
 
   carouselOuter.appendChild(carouselInner);
 
@@ -176,10 +175,15 @@ describe('carousel', function(){
 
   describe('_render function', ()=>{
     beforeEach(()=>{
+      spyOn(carousel, '_setCarouselId');
       spyOn(carousel, '_getItems');
       spyOn(carousel, '_setSelectedDefaults');
 
       carousel._render();
+    });
+
+    it('should call the _setCarouselId function', ()=>{
+      expect(carousel._setCarouselId).toHaveBeenCalled();
     });
 
     it('should call the _getItems function', ()=>{
@@ -199,25 +203,20 @@ describe('carousel', function(){
   //   How do I test this?
   // });
 
-  // describe('_addNextListener function', ()=>{
-  //   How do I test this?
-  // });
-
-  // describe('_addPreviousListener function', ()=>{
+  // describe('_addNavigationListener function', ()=>{
   //   How do I test this?
   // });
 
   describe('_animateItemFinish function', ()=>{
-    let eventSpy, item;
+    let item;
 
     beforeEach(()=>{
       carousel.animating = true;
       carousel.items = this.items;
-      eventSpy = jasmine.createSpyObj('e', ['']);
       item = carousel.items[0];
       item.className += ' animating';
 
-      carousel._animateItemFinish(item, eventSpy);
+      carousel._animateItemFinish(item);
     });
 
     it('should set this.animating to false', ()=>{
@@ -325,34 +324,16 @@ describe('carousel', function(){
 
       spyOn(carousel, '_addNavigationListener');
       spyOn(carousel, '_createArrowNavSvg').and.returnValue(svg);
+
+      carousel._createArrowNav('next', li);
     });
 
-    describe('when the direction parameter is "previous"', ()=>{
-      beforeEach(()=>{
-        carousel._createArrowNav('previous', li);
-      });
-
-      it('should call the _createArrowNavSvg function with "previous" as a parameter', ()=>{
-        expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('previous');
-      });
-
-      it('should call the _addNavigationListener function with "previous" as a parameter', ()=>{
-        expect(carousel._addNavigationListener.calls.mostRecent().args[1]).toEqual('previous');
-      });
+    it('should call the _createArrowNavSvg function with the direction as a parameter', ()=>{
+      expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('next');
     });
 
-    describe('when the direction parameter is "next"', ()=>{
-      beforeEach(()=>{
-        carousel._createArrowNav('next', li);
-      });
-
-      it('should call the _createArrowNavSvg function with "next" as a parameter', ()=>{
-        expect(carousel._createArrowNavSvg).toHaveBeenCalledWith('next');
-      });
-
-      it('should call the _addNavigationListener function with "next" as a parameter', ()=>{
-        expect(carousel._addNavigationListener.calls.mostRecent().args[1]).toEqual('next');
-      });
+    it('should call the _addNavigationListener function with the direction as a parameter', ()=>{
+      expect(carousel._addNavigationListener.calls.mostRecent().args[1]).toEqual('next');
     });
   });
 
@@ -481,6 +462,8 @@ describe('carousel', function(){
       carousel.dotsContainer = this.dotsContainer;
 
       spyOn(carousel, '_addDotClickListeners');
+      spyOn(carousel, '_setDotAriaSelectedDefaults');
+      spyOn(carousel, '_setDotAriaControls');
       spyOn(carousel, '_setDotClass');
 
       carousel._getDots();
@@ -488,6 +471,14 @@ describe('carousel', function(){
 
     it('should call the _addDotClickListeners function', ()=>{
       expect(carousel._addDotClickListeners).toHaveBeenCalled();
+    });
+
+    it('should call the _setDotAriaSelectedDefaults function', ()=>{
+      expect(carousel._setDotAriaSelectedDefaults).toHaveBeenCalled();
+    });
+
+    it('should call the _setDotAriaControls function', ()=>{
+      expect(carousel._setDotAriaControls).toHaveBeenCalled();
     });
 
     it('should call the _setDotClass function', ()=>{
@@ -500,6 +491,8 @@ describe('carousel', function(){
       spyOn(carousel, '_checkDataURLs');
       spyOn(carousel, '_createArrowNavContainer');
       spyOn(carousel, '_createDotsNavContainer');
+      spyOn(carousel, '_setItemAriaHiddenDefaults');
+      spyOn(carousel, '_setItemId');
     });
 
     describe('under all circumstances', ()=>{
@@ -509,6 +502,14 @@ describe('carousel', function(){
 
       it('should call the _checkDataURLs function', ()=>{
         expect(carousel._checkDataURLs).toHaveBeenCalled();
+      });
+
+      it('should call the _setItemAriaHiddenDefaults function', ()=>{
+        expect(carousel._setItemAriaHiddenDefaults).toHaveBeenCalled();
+      });
+
+      it('should call the _setItemId function', ()=>{
+        expect(carousel._setItemId).toHaveBeenCalled();
       });
     });
 
@@ -651,7 +652,6 @@ describe('carousel', function(){
       it('should not call the _next function', ()=>{
         expect(carousel._next).not.toHaveBeenCalled();
       });
-      
     });
   });
 
@@ -668,7 +668,7 @@ describe('carousel', function(){
       });
 
       it('should call the _setSelected function with "next" as a parameter', ()=>{
-          expect(carousel._setSelected).toHaveBeenCalledWith('next');
+        expect(carousel._setSelected).toHaveBeenCalledWith('next');
       });
     });
 
@@ -767,7 +767,46 @@ describe('carousel', function(){
     });
   });
 
-  fdescribe('_setDotClass function', ()=>{
+  describe('_setCarouselId function', ()=>{
+    beforeEach(()=>{
+      carousel._setCarouselId();
+    });
+
+    it('should set this.config.element.id to be "carousel-" followed by a unique ID', ()=>{
+      expect(carousel.config.element.id).toContain('carousel-');
+    });
+  });
+
+  describe('_setDotAriaControls function', ()=>{
+    let a, dot, li, ul;
+
+    beforeEach(()=>{
+      carousel.config.element.id = 'carousel-123';
+      carousel.items = this.items;
+      ul = this.dotsContainer.getElementsByTagName('ul')[0];
+
+      _.forEach(carousel.items, function(item){
+        a = document.createElement('a');
+        li = document.createElement('li');
+
+        a.setAttribute('href', '#');
+
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+
+      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      dot = carousel.dots[0];
+
+      carousel._setDotAriaControls();
+    });
+
+    it("should set the dot's 'aria-controls' attribute to be the carousel id followed by the dots index plus 1", ()=>{
+        expect(dot.getAttribute('aria-controls')).toEqual('carousel-123-item-1');
+      });
+  });
+
+  describe('_setDotClass function', ()=>{
     let a, li, ul;
 
     beforeEach(()=>{
@@ -813,12 +852,12 @@ describe('carousel', function(){
         functionCall = carousel._setPosition(direction, position);
       });
 
-      it('should return the inPos method ', ()=>{
-        expect(functionCall.inPos).toBeDefined();
+      it('should return the inPosition method ', ()=>{
+        expect(functionCall.inPosition).toBeDefined();
       });
 
-      it('should return the outPos method ', ()=>{
-        expect(functionCall.outPos).toBeDefined();
+      it('should return the outPosition method ', ()=>{
+        expect(functionCall.outPosition).toBeDefined();
       });
     });
 
@@ -834,12 +873,12 @@ describe('carousel', function(){
           functionCall = carousel._setPosition(direction, position);
         });
 
-        it('the inPos method should return the position parameter expressed as a positive pixel value', ()=>{
-          expect(functionCall.inPos).toEqual('1000px');
+        it('the inPosition method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.inPosition).toEqual('1000px');
         });
 
-        it('the outPos method should return the position parameter expressed as a negative pixel value', ()=>{
-          expect(functionCall.outPos).toEqual('-1000px');
+        it('the outPosition method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.outPosition).toEqual('-1000px');
         });
       });
 
@@ -850,12 +889,12 @@ describe('carousel', function(){
           functionCall = carousel._setPosition(direction, position);
         });
 
-        it('the inPos method should return the position parameter expressed as a negative pixel value', ()=>{
-          expect(functionCall.inPos).toEqual('-1000px');
+        it('the inPosition method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.inPosition).toEqual('-1000px');
         });
 
-        it('the outPos method should return the position parameter expressed as a positive pixel value', ()=>{
-          expect(functionCall.outPos).toEqual('1000px');
+        it('the outPosition method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.outPosition).toEqual('1000px');
         });
       });
     });
@@ -872,12 +911,12 @@ describe('carousel', function(){
           functionCall = carousel._setPosition(direction, position);
         });
 
-        it('the inPos method should return the position parameter expressed as a negative pixel value', ()=>{
-          expect(functionCall.inPos).toEqual('-1000px');
+        it('the inPosition method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.inPosition).toEqual('-1000px');
         });
 
-        it('the outPos method should return the position parameter expressed as a positive pixel value', ()=>{
-          expect(functionCall.outPos).toEqual('1000px');
+        it('the outPosition method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.outPosition).toEqual('1000px');
         });
       });
 
@@ -888,19 +927,19 @@ describe('carousel', function(){
           functionCall = carousel._setPosition(direction, position);
         });
 
-        it('the inPos method should return the position parameter expressed as a positive pixel value', ()=>{
-          expect(functionCall.inPos).toEqual('1000px');
+        it('the inPosition method should return the position parameter expressed as a positive pixel value', ()=>{
+          expect(functionCall.inPosition).toEqual('1000px');
         });
 
-        it('the outPos method should return the position parameter expressed as a negative pixel value', ()=>{
-          expect(functionCall.outPos).toEqual('-1000px');
+        it('the outPosition method should return the position parameter expressed as a negative pixel value', ()=>{
+          expect(functionCall.outPosition).toEqual('-1000px');
         });
       });
     });
   });
 
   describe('_setSelected function', ()=>{
-    let direction, dot, itemIn, itemOut, ul, windowWidth;
+    let direction, dot, itemIn, itemOut, ul;
 
     beforeEach(()=>{
       carousel.dots = this.dotsContainer.getElementsByTagName('a');
@@ -909,20 +948,25 @@ describe('carousel', function(){
       carousel.itemIn = 1;
       carousel.itemOut = 0;
       carousel.items = this.items;
+      carousel.size = {
+        height: 391
+        , width: 1280
+      };
       itemIn = this.items[1];
       itemOut = this.items[0];
-      windowWidth = carousel.config.element.clientWidth + 'px';
 
       spyOn(carousel, '_animateItemStart');
+      spyOn(carousel, '_setDotAriaSelected');
       spyOn(carousel, '_setDotClass');
-      spyOn(carousel, '_setPosition').and.returnValue({inPos: '1000px', outPos: '-1000px'});
-      spyOn(carousel.eventManager, 'removeAll');
+      spyOn(carousel, '_setItemAriaHidden');
+      spyOn(carousel, '_setPosition').and.returnValue({inPosition: '1000px', outPosition: '-1000px'});
+      spyOn(carousel.eventManager, 'removeListeners');
 
       carousel._setSelected('next');
     });
 
-    it('should call the carousel.eventManager.removeAll function', ()=>{
-      expect(carousel.eventManager.removeAll).toHaveBeenCalled();
+    it('should call the carousel.eventManager.removeListeners function', ()=>{
+      expect(carousel.eventManager.removeListeners).toHaveBeenCalled();
     });
 
     it('should set this.itemIn to be the value of this.itemActive', ()=>{
@@ -941,8 +985,16 @@ describe('carousel', function(){
       expect(carousel._animateItemStart.calls.argsFor(1)).toEqual([itemOut, 0, '-1000px']);
     });
 
-    it('should call the _setDotClass function with the active dot as the parameter', ()=>{
+    it('should call the _setDotAriaSelected function', ()=>{
+      expect(carousel._setDotAriaSelected).toHaveBeenCalled();
+    });
+
+    it('should call the _setDotClass function', ()=>{
       expect(carousel._setDotClass).toHaveBeenCalled();
+    });
+
+    it('should call the _setItemAriaHidden function', ()=>{
+      expect(carousel._setItemAriaHidden).toHaveBeenCalled();
     });
   });
 
@@ -953,8 +1005,8 @@ describe('carousel', function(){
       carousel.items = this.items;
       carousel.itemActive = 0;
       carousel.size = {
-        height: 391,
-        width: 1280
+        height: 391
+        , width: 1280
       };
       itemOne = this.items[0];
       itemTwo = this.items[1];
