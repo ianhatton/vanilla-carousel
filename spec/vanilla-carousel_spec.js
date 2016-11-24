@@ -85,11 +85,10 @@ function createCarouselOverlays(carouselImageContainer, i){
   carouselImageContainer.appendChild(carouselOverlay);
 }
 
-function createDotsNavContainer(){
-  let dotsContainer;
+function createDotsContainer(){
   let div = document.createElement('div');
+  let dotsContainer = document.createElement('div');
   let ul = document.createElement('ul');
-  dotsContainer = document.createElement('div');
 
   div.className = 'carousel-dots';
   dotsContainer.id = 'carousel-dots-container';
@@ -100,8 +99,31 @@ function createDotsNavContainer(){
   return dotsContainer;
 }
 
+function createDotsNav(dotsContainer, items){
+  let a, li, span;
+
+  let ul = dotsContainer.getElementsByTagName('ul')[0];
+
+  _.forEach(items, function(item){
+    a = document.createElement('a');
+    li = document.createElement('li');
+    span = document.createElement('span');
+
+    a.setAttribute('href', '#');
+
+    span.className = 'hidden';
+    span.innerHTML = 'view carousel item';
+
+    a.appendChild(span);
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+
+  return ul;
+}
+
 describe('carousel', function(){
-  let c, carousel, viewport;
+  let c, carousel, dotsNav, viewport;
 
   beforeEach(()=>{
     c = createCarousel();
@@ -114,8 +136,10 @@ describe('carousel', function(){
     }, false);
 
     // For testing
-    this.dotsContainer = createDotsNavContainer();
     this.items = carousel.config.element.querySelectorAll('.' + carousel.config.itemClass);
+    this.dotsContainer = createDotsContainer();
+    dotsNav = createDotsNav(this.dotsContainer, this.items);
+    this.dots = dotsNav.getElementsByTagName('a');
   });
 
   it('should exist', ()=>{
@@ -337,10 +361,6 @@ describe('carousel', function(){
     });
   });
 
-  // describe('_createArrowNavSvg function', ()=>{
-  //  I don't see the point in testing this
-  // });
-
   describe('_createArrowNavContainer', ()=>{
     beforeEach(()=>{
       spyOn(carousel, '_createArrowNav');
@@ -353,13 +373,22 @@ describe('carousel', function(){
     });
   });
 
+  // describe('_createArrowNavSvg function', ()=>{
+  //  I don't see the point in testing this
+  // });
+
   describe('_createDotsNav function', ()=>{
-    let ul;
+    let listItems, ul;
 
     beforeEach(()=>{
       carousel.dotsContainer = this.dotsContainer;
       carousel.items = this.items;
       ul = this.dotsContainer.getElementsByTagName('ul')[0];
+      listItems = ul.querySelectorAll('li');
+
+      _.forEach(listItems, (li)=>{
+        li.parentNode.removeChild(li);
+      });
 
       spyOn(carousel, '_getDots');
 
@@ -395,7 +424,7 @@ describe('carousel', function(){
     let clickSpy;
 
     beforeEach(()=>{
-      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      carousel.dots = this.dots;
 
       clickSpy = jasmine.createSpyObj('e', ['preventDefault', 'target']);
 
@@ -708,7 +737,7 @@ describe('carousel', function(){
       });
 
       it('should call the _setSelected function with "previous" as a parameter', ()=>{
-          expect(carousel._setSelected).toHaveBeenCalledWith('previous');
+        expect(carousel._setSelected).toHaveBeenCalledWith('previous');
       });
     });
 
@@ -778,53 +807,65 @@ describe('carousel', function(){
   });
 
   describe('_setDotAriaControls function', ()=>{
-    let a, dot, li, ul;
+    let a;
 
     beforeEach(()=>{
       carousel.config.element.id = 'carousel-123';
       carousel.items = this.items;
-      ul = this.dotsContainer.getElementsByTagName('ul')[0];
-
-      _.forEach(carousel.items, function(item){
-        a = document.createElement('a');
-        li = document.createElement('li');
-
-        a.setAttribute('href', '#');
-
-        li.appendChild(a);
-        ul.appendChild(li);
-      });
-
-      carousel.dots = this.dotsContainer.getElementsByTagName('a');
-      dot = carousel.dots[0];
+      carousel.dots = this.dots;
 
       carousel._setDotAriaControls();
     });
 
-    it("should set the dot's 'aria-controls' attribute to be the carousel id followed by the dots index plus 1", ()=>{
-        expect(dot.getAttribute('aria-controls')).toEqual('carousel-123-item-1');
-      });
+    it("should set each dot's 'aria-controls' attribute to be the carousel id followed by the dot's index plus 1", ()=>{
+      expect(carousel.dots[0].getAttribute('aria-controls')).toEqual('carousel-123-item-1');
+    });
+  });
+
+  describe('_setDotAriaSelected function', ()=>{
+    beforeEach(()=>{
+      carousel.dots = this.dots;
+      carousel.itemActive = 0;
+
+      carousel.dots[1].setAttribute('aria-selected', 'true');
+
+      carousel._setDotAriaSelected();
+    });
+
+    it("should set the active dot's 'aria-selected' attribute to be 'true'", ()=>{
+      expect(carousel.dots[0].getAttribute('aria-selected')).toEqual('true');
+    });
+
+    it("should set the previously active dot's 'aria-selected' attribute to be 'false'", ()=>{
+      expect(carousel.dots[1].getAttribute('aria-selected')).toEqual('false');
+    });
+  });
+
+  describe('_setDotAriaSelectedDefaults function', ()=>{
+    beforeEach(()=>{
+      carousel.dots = this.dots;
+      carousel.itemActive = 0;
+
+      carousel._setDotAriaSelectedDefaults();
+    });
+
+    it("should set the active dot's 'aria-selected' attribute to be 'true'", ()=>{
+      expect(carousel.dots[0].getAttribute('aria-selected')).toEqual('true');
+    });
+
+    it("should set the all other dots' aria-selected' attributes to be 'false'", ()=>{
+      expect(carousel.dots[1].getAttribute('aria-selected')).toEqual('false');
+    });
   });
 
   describe('_setDotClass function', ()=>{
-    let a, li, ul;
+    let a;
 
     beforeEach(()=>{
-      carousel.items = this.items;
-      ul = this.dotsContainer.getElementsByTagName('ul')[0];
-
-      _.forEach(carousel.items, function(item){
-        a = document.createElement('a');
-        li = document.createElement('li');
-
-        a.setAttribute('href', '#');
-
-        li.appendChild(a);
-        ul.appendChild(li);
-      });
-
-      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      carousel.dots = this.dots;
       carousel.itemActive = 0;
+
+      carousel.dots[1].className = 'active';
 
       carousel._setDotClass();
     });
@@ -833,8 +874,57 @@ describe('carousel', function(){
       expect(carousel.dots[0].className).toContain('active');
     });
 
-    it('should remove the "active" class from all of the dots', ()=>{
+    it('should remove the "active" class from the previously active dot', ()=>{
       expect(carousel.dots[1].className).not.toContain('active');
+    });
+  });
+
+  describe('_setItemAriaHidden function', ()=>{
+    beforeEach(()=>{
+      carousel.items = this.items;
+      carousel.itemActive = 0;
+
+      carousel.items[1].setAttribute('aria-hidden', 'false');
+
+      carousel._setItemAriaHidden();
+    });
+
+    it("should set the active item's 'aria-hidden' attribute to be 'false'", ()=>{
+      expect(carousel.items[0].getAttribute('aria-hidden')).toEqual('false');
+    });
+
+    it("should set the previously active item's 'aria-hidden' attribute to be 'true'", ()=>{
+      expect(carousel.items[1].getAttribute('aria-hidden')).toEqual('true');
+    });
+  });
+
+  describe('_setItemAriaHiddenDefaults function', ()=>{
+    beforeEach(()=>{
+      carousel.items = this.items;
+      carousel.itemActive = 0;
+
+      carousel._setItemAriaHiddenDefaults();
+    });
+
+    it("should set the active item's 'aria-hidden' attribute to be 'false'", ()=>{
+      expect(carousel.items[0].getAttribute('aria-hidden')).toEqual('false');
+    });
+
+    it("should set the all other items' aria-hidden' attributes to be 'true'", ()=>{
+      expect(carousel.items[1].getAttribute('aria-hidden')).toEqual('true');
+    });
+  });
+
+  describe('_setItemId function', ()=>{
+    beforeEach(()=>{
+      carousel.config.element.id = 'carousel-123';
+      carousel.items = this.items;
+
+      carousel._setItemId();
+    });
+
+    it("should set each item's id to be the carousel id followed by '-item-' followed by the item's index plus 1", ()=>{
+      expect(carousel.items[0].id).toEqual('carousel-123-item-1');
     });
   });
 
@@ -939,10 +1029,10 @@ describe('carousel', function(){
   });
 
   describe('_setSelected function', ()=>{
-    let direction, dot, itemIn, itemOut, ul;
+    let direction, itemIn, itemOut, ul;
 
     beforeEach(()=>{
-      carousel.dots = this.dotsContainer.getElementsByTagName('a');
+      carousel.dots = this.dots;
       carousel.eventManager = carousel._manageListeners();
       carousel.itemActive = 1;
       carousel.itemIn = 1;

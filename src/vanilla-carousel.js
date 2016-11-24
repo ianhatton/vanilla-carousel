@@ -1,5 +1,5 @@
 const _                   = require('lodash/core');
-_.includes = require("lodash/includes");
+_.includes = require('lodash/includes');
 const ViewportDetectionClass = require('viewport-detection-es6');
 
 const viewport = new ViewportDetectionClass();
@@ -117,6 +117,24 @@ class CarouselClass{
     parent.appendChild(a);
   }
 
+  _createArrowNavContainer(){
+    let i, li, ul;
+
+    ul = document.createElement('ul');
+    ul.className = 'carousel-arrows-container';
+
+    for (i = 0; i < 2; i++){
+      li = document.createElement('li');
+
+      li.className = i === 0 ? 'previous' : 'next';
+      this._createArrowNav(i === 0 ? 'previous' : 'next', li);
+
+      ul.appendChild(li);
+    }
+
+    this.config.element.appendChild(ul);
+  }
+
   _createArrowNavSvg(direction){
     let pathA = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     let pathB = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -152,24 +170,6 @@ class CarouselClass{
     svg.appendChild(pathB);
 
     return svg;
-  }
-
-  _createArrowNavContainer(){
-    let i, li, ul;
-
-    ul = document.createElement('ul');
-    ul.className = 'carousel-arrows-container';
-
-    for (i = 0; i < 2; i++){
-      li = document.createElement('li');
-
-      li.className = i === 0 ? 'previous' : 'next';
-      this._createArrowNav(i === 0 ? 'previous' : 'next', li);
-
-      ul.appendChild(li);
-    }
-
-    this.config.element.appendChild(ul);
   }
 
   _createDotsNav(){
