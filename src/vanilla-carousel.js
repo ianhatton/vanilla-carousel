@@ -441,7 +441,7 @@ class CarouselClass{
                         0 : this.size.width + 'px';
     });
 
-    if (this.config.autoPlay && this.items.length > 0){
+    if (this.config.autoPlay && this.items.length > 1){
       this._addFocusListeners();
       this._restartTimer();
     }
