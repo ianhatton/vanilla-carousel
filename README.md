@@ -64,6 +64,8 @@ The ***data-*** attributes for mobile, tablet and desktop are optional, but if t
 ### CSS
 As a bare minimum, you'll require the following, or similar CSS:
 
+##### Non-responsive
+(base styles)
 ```scss
 .carousel {
   overflow: hidden;
@@ -175,3 +177,43 @@ As a bare minimum, you'll require the following, or similar CSS:
 }
 ```
 
+##### Responsive
+(styles which are applied at different breakpoints)
+```scss
+.carousel {
+  @include breakpoint($mobile-breakpoint) {
+    .carousel-arrows-container {
+      top: 38%;
+
+      li {
+        a {
+          height: 25px;
+          width: 50px;
+        }
+      }
+    }
+
+    .carousel-inner {
+      padding-bottom: 75%; /* 480x360 */
+    }
+  }
+
+  @include breakpoint($tablet-breakpoint) {
+    .carousel-inner {
+      padding-bottom: 60.15625%; /* 768x462 */
+    }
+  }
+
+  @include breakpoint($tablet-and-desktop-breakpoint) {
+    .carousel-arrows-container {
+      top: 42%;
+    }
+  }
+
+  @include breakpoint($desktop-breakpoint) {
+    .carousel-inner {
+      padding-bottom: 30.546875%; /* 1280x391 */
+    }
+  }
+}
+```
