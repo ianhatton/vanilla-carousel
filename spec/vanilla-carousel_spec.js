@@ -136,10 +136,10 @@ describe('carousel', function(){
     }, false);
 
     // For testing
-    this.items = carousel.config.element.querySelectorAll('.' + carousel.config.itemClass);
+    this.items = Array.from(carousel.config.element.querySelectorAll('.' + carousel.config.itemClass));
     this.dotsContainer = createDotsContainer();
     dotsNav = createDotsNav(this.dotsContainer, this.items);
-    this.dots = dotsNav.getElementsByTagName('a');
+    this.dots = Array.from(dotsNav.getElementsByTagName('a'));
   });
 
   it('should exist', ()=>{

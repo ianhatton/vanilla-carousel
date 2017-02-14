@@ -33,13 +33,12 @@
     "test:watch": "karma start --browsers PhantomJS"
   },
   "devDependencies": {
-    "babel": "^6.5.2",
-    "babel-cli": "^6.22.2",
+    "babel": "^6.23.0",
+    "babel-cli": "^6.23.0",
     "babel-eslint": "^7.1.1",
-    "babel-polyfill": "^6.22.0",
     "babel-preset-es2015": "^6.22.0",
     "babelify": "^7.2.0",
-    "browserify": "^14.0.0",
+    "browserify": "^14.1.0",
     "eslint": "3.15.0",
     "eslint-config-google": "0.7.1",
     "eslint-config-morsedigital": "1.1.0",
@@ -54,12 +53,14 @@
     "karma-safari-launcher": "^1.0.0",
     "karma-story-reporter": "^0.3.1",
     "lodash": "^4.17.4",
+    "phantomjs-polyfill-array-from": "^1.0.1",
     "phantomjs-prebuilt": "^2.1.14",
     "rewireify": "^0.2.5",
     "viewport-detection-es6": "~2.1.*",
     "watchify": "^3.9.0"
   },
   "peerDependencies": {
+    "babel-polyfill": "^6.*.*",
     "lodash": "^4.*.*",
     "viewport-detection-es6": "~2.1.*"
   }

@@ -15,7 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'spec/*_spec.js'
+        './node_modules/phantomjs-polyfill-array-from/array-from-polyfill.js',
+        'spec/*_spec.js'
     ],
 
 

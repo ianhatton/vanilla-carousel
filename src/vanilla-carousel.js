@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const _                   = require('lodash/core');
 _.includes = require('lodash/includes');
 const ViewportDetectionClass = require('viewport-detection-es6');
@@ -39,7 +40,7 @@ class CarouselClass{
   }
 
   _addDotClickListeners(){
-    _.forEach(this.dots, (dot)=>{
+    this.dots.forEach((dot)=>{
       dot.addEventListener('click', this._dotClick.bind(this), false);
     });
   }
@@ -83,15 +84,13 @@ class CarouselClass{
   _checkDataURLs(){
     let imageContainer, imageMobile, imageTablet, imageDesktop;
 
-    _.forEach(this.items, (item)=>{
+    this.items.forEach((item)=>{
       imageContainer = this._skipTextNodes(item, 'firstChild');
       imageMobile = imageContainer.getAttribute('data-mobile');
       imageTablet = imageContainer.getAttribute('data-tablet');
       imageDesktop = imageContainer.getAttribute('data-desktop');
 
-      /* eslint-disable max-len */
       if ((!_.isEmpty(imageMobile)) && (!_.isEmpty(imageTablet)) && (!_.isEmpty(imageDesktop))){
-      /* eslint-enable */
         item.setAttribute('data-urls', 'true');
         this._setBackgroundImage(imageContainer, this.device);
       } else {
@@ -176,7 +175,7 @@ class CarouselClass{
     let a, li, span;
     let ul = this.dotsContainer.getElementsByTagName('ul')[0];
 
-    _.forEach(this.items, ()=>{
+    this.items.forEach(()=>{
       a = document.createElement('a');
       li = document.createElement('li');
       span = document.createElement('span');
@@ -225,7 +224,7 @@ class CarouselClass{
   }
 
   _getDots(){
-    this.dots = this.dotsContainer.getElementsByTagName('a');
+    this.dots = Array.from(this.dotsContainer.getElementsByTagName('a'));
 
     this._addDotClickListeners();
     this._setDotAriaSelectedDefaults();
@@ -234,9 +233,7 @@ class CarouselClass{
   }
 
   _getItems(){
-    /* eslint-disable max-len */
-    this.items = this.config.element.querySelectorAll('.' + this.config.itemClass);
-    /* eslint-enable */
+    this.items = Array.from(this.config.element.querySelectorAll('.' + this.config.itemClass));
 
     if (this.items.length > 1){
       this._createArrowNavContainer();
@@ -264,7 +261,7 @@ class CarouselClass{
 
       , removeListeners: ()=>{
         if (listenerArray.length > 0){
-          _.forEach(listenerArray, (cur)=>{
+          listenerArray.forEach((cur)=>{
             cur.target.removeEventListener(cur.event, cur.fn, false);
             cur.target.className.replace(/(?:^|\s)animating(?!\S)/g, '');
           });
@@ -326,14 +323,14 @@ class CarouselClass{
   }
 
   _setDotAriaControls(){
-    _.forEach(this.dots, (dot, i)=>{
+    this.dots.forEach((dot, i)=>{
       dot.setAttribute('aria-controls'
                        , `${this.config.element.id}-item-${i + 1}`);
     });
   }
 
   _setDotAriaSelected(){
-    _.forEach(this.dots, (dot)=>{
+    this.dots.forEach((dot)=>{
       if (dot === this.dots[this.itemActive]){
         dot.setAttribute('aria-selected', 'true');
       } else {
@@ -347,7 +344,7 @@ class CarouselClass{
   }
 
   _setDotAriaSelectedDefaults(){
-    _.forEach(this.dots, (dot)=>{
+    this.dots.forEach((dot)=>{
       dot.setAttribute('aria-selected'
                        , dot === this.dots[this.itemActive] ?
                        'true' : 'false');
@@ -355,7 +352,7 @@ class CarouselClass{
   }
 
   _setDotClass(){
-    _.forEach(this.dots, (dot)=>{
+    this.dots.forEach((dot)=>{
       if (dot === this.dots[this.itemActive]){
         dot.className += ' active';
       } else {
@@ -369,7 +366,7 @@ class CarouselClass{
   }
 
   _setItemAriaHidden(){
-    _.forEach(this.items, (item)=>{
+    this.items.forEach((item)=>{
       if (item === this.items[this.itemActive]){
         item.setAttribute('aria-hidden', 'false');
       } else {
@@ -383,7 +380,7 @@ class CarouselClass{
   }
 
   _setItemAriaHiddenDefaults(){
-    _.forEach(this.items, (item)=>{
+    this.items.forEach((item)=>{
       item.setAttribute('aria-hidden'
                         , item === this.items[this.itemActive] ?
                         'false' : 'true');
@@ -391,7 +388,7 @@ class CarouselClass{
   }
 
   _setItemId(){
-    _.forEach(this.items, (item, i)=>{
+    this.items.forEach((item, i)=>{
       item.id = `${this.config.element.id}-item-${i + 1}`;
     });
   }
@@ -436,7 +433,7 @@ class CarouselClass{
   }
 
   _setSelectedDefaults(){
-    _.forEach(this.items, (item)=>{
+    this.items.forEach((item)=>{
       item.style.left = item === this.items[this.itemActive] ?
                         0 : this.size.width + 'px';
     });
@@ -494,3 +491,4 @@ class CarouselClass{
 }
 
 module.exports = CarouselClass;
+/* eslint-enable */
